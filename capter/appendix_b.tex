@@ -9,7 +9,7 @@ Both references run on \texttt{hard\_v2} with environment seed 42 and environmen
 \input{table/or_composite_access_audit}
 \begin{algorithm}[t]
 \small
-\caption{Oracle quality-based policy}
+\caption{Privileged Heuristic: quality-based policy}
 \label{alg:handcrafted_policy}
 \begin{algorithmic}[1]
 \Require Horizon $T$, categories $\mathcal{C}$, products $\mathcal{J}$, shelf capacity $C^{\mathrm{shelf}}$, per-category product count $n_{\mathrm{cat}}$, bulk multiplier $B$.
@@ -74,7 +74,7 @@ p = \frac{c}{1-\bar r}
 \end{equation}
 where $c$ denotes the selected supplier's quote, $\bar r$ its upper-bound return rate, and $\varepsilon$ the estimated demand elasticity~\citep{phillips2021pricing}. Prices are constrained to each SKU's historically observed range.
 
-\subsection{Oracle Policy}
+\subsection{Privileged Heuristic}
 \label{appendix:handcrafted_policy}
 
-The oracle policy is a deterministic, quality-based store-operation rule used as a privileged non-agent reference. It is neither a fair LLM-agent baseline nor a strict upper bound: it has direct access to structured simulator fields such as supplier quality scores and news impact values, and it does not face prompt length, tool-selection, memory, or action-formatting constraints. The reported run uses the released environment with $n_{\mathrm{cat}}=2$ products per category, shelf capacity $C^{\mathrm{shelf}}=40$, and replenishment multiplier $B=6$, selected by a parameter sweep over the shelf-constrained setting. Differences between this policy and OR-Composite cannot be attributed solely to hidden information because their assortment, replenishment, and pricing rules also differ.
+The Privileged Heuristic is a deterministic, hand-specified, quality-based store-operation rule used as a non-agent reference with access to hidden simulator state. It is neither a fair LLM-agent baseline nor a strict upper bound: it has direct access to structured simulator fields such as supplier quality scores and news impact values, and it does not face prompt length, tool-selection, memory, or action-formatting constraints. The reported run uses the released environment with $n_{\mathrm{cat}}=2$ products per category, shelf capacity $C^{\mathrm{shelf}}=40$, and replenishment multiplier $B=6$, selected by a parameter sweep over the shelf-constrained setting. Differences between this policy and OR-Composite cannot be attributed solely to hidden information because their assortment, replenishment, and pricing rules also differ.

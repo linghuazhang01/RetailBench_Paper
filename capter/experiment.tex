@@ -7,17 +7,15 @@
 \begin{figure*}[t]
     \centering
     \includegraphics[width=\textwidth]{figures/four_stage_scores.pdf}
-   \caption{Model-level outcome summary.
-Results are reported as mean $\pm$ sample standard deviation
-across three scaffolds, except GPT-5.5 (ReAct only).
-LLM agents substantially underperform both references,
-with the best LLM achieving only 30.1\% of OR-Composite's
-final net worth.
-Bold and underline indicate the best and second-best LLM results.
-OR-Composite uses only agent-visible information
-(Appendix~\ref{appendix:or_composite}),
-while Oracle is a privileged reference
-(Appendix~\ref{appendix:handcrafted_policy}).}
+    \caption{Four-stage diagnostic scores (\%, higher is better).
+    LLM results are averaged across evaluated scaffolds;
+    $^{\dagger}$GPT-5.5 is evaluated under ReAct only.
+    Stage 3 is the mean of the order-quantity reasonable rate and the
+    highest-quality-supplier rate (Appendix~\ref{appendix:stage_metrics}).
+    DS-V4-Pro, MM-M2.5, and Qwen3.5 denote DeepSeek-V4-Pro,
+    MiniMax-M2.5, and Qwen3.5-397B-A17B, respectively.
+    OR-Composite is an operations-research reference,
+    and the Privileged Heuristic is a hand-specified rule with access to hidden simulator state.}
     \label{fig:four_stage_scores}
     \vspace{-2mm}
 \end{figure*}
@@ -25,10 +23,7 @@ while Oracle is a privileged reference
 \paragraph{Long-horizon operational performance.}
 Table~\ref{tab:aggregate_main_results} summarizes performance across ReAct, Reflection, and Plan-and-Act for the six models with complete scaffold coverage, reporting means and sample standard deviations across scaffolds rather than independent trials. GPT-5.5 is evaluated under ReAct only. No scaffold consistently dominates, with ReAct, Reflection, and Plan-and-Act achieving win counts of 2/2/2 for both final net worth and sales, and 3/1/2 for survival. Results for all 19 rollouts and the scaffold win counts are provided in Appendix~\ref{appendix:rollout_results}.
 
-Results reveal substantial limitations in sustaining effective operations over long horizons. Mean survival ranges from 40.3 days (Grok-4.3) to 139.3 days (DeepSeek-V4-Pro), with none of the six fully evaluated models reaching the 180-day horizon on average. Only two of 19 rollouts complete all 180 days: DeepSeek-V4-Pro with Plan-and-Act and GPT-5.5 with ReAct. Moreover, completing the horizon does not guarantee strong business performance. The privileged Oracle achieves a final net worth of 124{,}491.15 and sales of 263{,}310 units, compared with 80{,}801.21 and 202{,}557 units for OR-Composite. DeepSeek-V4-Pro achieves the highest across-scaffold mean sales among fully evaluated models (110{,}980 units), while GPT-5.5 (ReAct), despite completing the full horizon, achieves only 24{,}350.98 in final net worth and 136{,}405 units in sales. These results reveal a substantial gap between sustained operation and effective long-horizon business performance.
-
-\paragraph{Four-stage decision-making diagnosis.}
-To examine where these performance gaps arise, we analyze agent trajectories across four stages: product monitoring, evidence collection, decision-making, and anomaly response (Section~\ref{sec:four_stage_setup}). Figure~\ref{fig:four_stage_scores} reports the corresponding diagnostic scores, with LLM results averaged over evaluated scaffolds. We additionally report pooled statistics across all 19 rollouts and individual-rollout ranges. These analyses are descriptive, with one rollout per model--scaffold configuration. Detailed breakdowns are provided in Appendix~\ref{appendix:stage_metrics}.
+Results reveal substantial limitations in sustaining effective operations over long horizons. Mean survival ranges from 40.3 days (Grok-4.3) to 139.3 days (DeepSeek-V4-Pro), with none of the six fully evaluated models reaching the 180-day horizon on average. Only two of 19 rollouts complete all 180 days: DeepSeek-V4-Pro with Plan-and-Act and GPT-5.5 with ReAct. Moreover, completing the horizon does not guarantee strong business performance. The Privileged Heuristic achieves a final net worth of 124{,}491.15 and sales of 263{,}310 units, compared with 80{,}801.21 and 202{,}557 units for OR-Composite. DeepSeek-V4-Pro achieves the highest across-scaffold mean sales among fully evaluated models (110{,}980 units), while GPT-5.5 (ReAct), despite completing the full horizon, achieves only 24{,}350.98 in final net worth and 136{,}405 units in sales. These results reveal a substantial gap between sustained operation and effective long-horizon business performance.
 
 \paragraph{Four-stage decision-making diagnosis.}
 To characterize the observed performance gaps, we analyze agent
@@ -60,25 +55,41 @@ These results suggest that information acquisition is
 relatively reliable among stronger agents, although
 substantial variation remains across models.
 
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/order_quantity_classification.pdf}
+    \caption{Order-quantity classification. Each bar partitions a model's executed order lines into under-ordered (cover below the quoted maximum lead time), reasonable, and over-ordered (cover above shelf life); LLM results are averaged across evaluated scaffolds, and $^{\dagger}$GPT-5.5 is evaluated under ReAct only. Numbers at right are median days of cover.}
+    \label{fig:order_quantity}
+\end{figure}
+
 \paragraph{Decision-making: shallow evidence-to-decision integration.}
 Despite relatively strong evidence collection,
 Figure~\ref{fig:four_stage_scores} reveals a pronounced
-decline in supplier decision-making scores.
-Across 5{,}172 order lines, LLM agents select the
+decline in decision-making scores.
+The gap is largest in order sizing (Figure~\ref{fig:order_quantity}).
+Across 5{,}146 LLM order lines with a valid demand reference,
+only 53.7\% have a post-arrival cover between the quoted
+maximum lead time and the product's shelf life,
+compared with 92.4\% for OR-Composite and 89.4\% for the Privileged Heuristic.
+Model-level means range from 15.9\% (GLM-5.1) to 74.0\% (GPT-5.5).
+The dominant error is under-ordering (40.5\% of LLM order lines):
+agents typically order 50 to 200 units for products whose
+expected daily demand is 40 to 70 units, covering two to four days
+while delivery takes three to seven.
+Qwen3.5 and Grok-4.3 are the exceptions, with 18.5\% and 23.7\%
+over-ordered lines whose quantities exceed what can sell before expiration.
+Supplier selection shows the same disconnect:
+across 5{,}172 order lines, LLM agents select the
 highest-quality supplier in only 21.6\% of cases,
-close to the 20\% random-choice baseline.
-Model-level means range from 14.4\% to 34.8\%,
-compared with 53.8\% for OR-Composite.
-Although GLM-5.1 with Plan-and-Act achieves 56.0\%,
-this result is based on only 50 orders.
-As agents observe noisy quality signals and must balance
-supplier quality against price, this metric does not
-directly measure business decision optimality.
-Nevertheless, considered alongside their weaker overall
-business outcomes, these findings suggest
+close to the 20\% random-choice baseline, with model-level means
+from 14.4\% to 34.8\% against 53.8\% for OR-Composite.
+Both quantities are evaluator-side probes computed from the
+action-day state and do not measure pricing or overall optimality.
+Nevertheless, considered alongside their weaker business outcomes,
+these findings indicate
 \textbf{shallow evidence-to-decision integration}:
-agents struggle to translate acquired information
-into economically effective decisions.
+agents query demand and supplier information but do not convert it
+into quantities and sources that match it.
 
 \paragraph{Anomaly response: inconsistent operational follow-up.}
 Figure~\ref{fig:four_stage_scores} further shows limited
@@ -105,7 +116,8 @@ among LLM agents.
 Together, the outcome and trajectory analyses highlight persistent
 challenges in long-horizon retail operations. Despite relatively
 strong performance in product monitoring and evidence collection,
-LLM agents exhibit near-chance supplier-quality selection, while
+LLM agents size roughly half of their orders outside the feasible
+cover window and select suppliers near chance, while
 approximately two-thirds of eligible operational anomalies receive
 no corresponding action within three days. These findings reveal
 two recurring failure patterns:

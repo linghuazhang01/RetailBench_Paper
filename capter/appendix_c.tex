@@ -51,6 +51,8 @@ Table~\ref{tab:all_run_model_statistics} reports all 19 LLM rollouts: six models
 
 This section defines the four headline scores in Figure~\ref{fig:four_stage_scores} and the detailed per-stage breakdowns in Figure~\ref{fig:failure_diagnostics}. All quantities are computed from successfully completed days; calls in an incomplete terminal day are excluded. A tool query counts only when it succeeds and returns material evidence for the requested product. The metrics are descriptive probes rather than reward terms or a global system ranking. Let $T$ be the number of completed days.
 
+\input{table/four_stage_scores_runs}
+
 \paragraph{Headline scores.}
 \textbf{Stage 1: Product Monitoring.} Let $\mathcal{Y}_{t}$ be the products with positive sales on day $t$ and $\mathcal{Q}_t$ the products receiving a successful product-specific query on day $t$; store-wide inventory or order listings do not count. Then
 \begin{equation}
@@ -58,13 +60,22 @@ S_1=\frac{\sum_{t=2}^{T}|\mathcal{Y}_{t-1}\cap\mathcal{Q}_t|}{\sum_{t=2}^{T}|\ma
 \end{equation}
 \textbf{Stage 2: Evidence Collection.} $S_2=\mathrm{FullFresh}$, the share of executed action--product events whose required evidence dimensions are all current-day or recent-prior (defined below).
 
-\textbf{Stage 3: Decision-Making.} $S_3$ is the share of successful order lines whose chosen supplier has the highest raw simulator quality among the product's five suppliers. Raw quality is evaluator-only hidden state.
+\textbf{Stage 3: Decision-Making.} $S_3=\tfrac12\,(S_3^{\mathrm{qty}}+S_3^{\mathrm{sup}})$.
+$S_3^{\mathrm{sup}}$ is the share of successful order lines whose chosen supplier has the highest raw simulator quality among the product's five suppliers; raw quality is evaluator-only hidden state.
+$S_3^{\mathrm{qty}}$ is the share of order lines whose days of cover lie within a feasibility window. For an order line of $q$ units of product $j$ from supplier $k$ on day $t$, let $IP_{jt}$ be the inventory position at the time of the call (on hand, in transit, and earlier same-day orders), and let $\hat d_{jt}$ be the expected daily sales of $j$ at the agent's current price under the simulator's demand model, evaluated with the current shelf set, the other products' current prices, and the trailing 30-day mean customer count. News and review multipliers are set to zero; on the OR-Composite trace this reference predicts realized sales with a ratio of 0.92 over 6{,}369 product--days. Cover is
+\begin{equation}
+\mathrm{cover}_{jkt}=\frac{IP_{jt}+q}{\hat d_{jt}}.
+\end{equation}
+The line is \textbf{under-ordered} if $\mathrm{cover}<L^{\max}_{k}$, the quoted maximum transport days of supplier $k$; \textbf{over-ordered} if $\mathrm{cover}>\ell_j$, the shelf life of $j$; and \textbf{reasonable} otherwise. Both bounds are visible to the agent in supplier quotes and product information. Lines with $\hat d_{jt}<0.5$ are excluded from the denominator and counted separately (26 of 5{,}172 LLM lines). The window tests whether an order, once received, suffices until the next replenishment and does not exceed what can sell before expiration; stockouts that occur before arrival are attributed to Stage 4. Table~\ref{tab:order_quantity_runs} reports numerators and denominators per rollout, and Table~\ref{tab:order_quantity_validation} checks the classification against subsequent events: among LLM lines, 44.7\% of under-ordered lines are followed by a stockout of the same product before the quoted arrival, versus 34.2\% of reasonable lines, and 9.7\% of over-ordered lines see expiration of the product within the shelf-life window, versus 2.4\% of reasonable lines; the corresponding reference-policy rates are 56.2\% versus 27.3\% and 7.6\% versus 1.2\%.
+
+\input{table/order_quantity_runs}
+\input{table/order_quantity_validation}
 
 \textbf{Stage 4: Anomaly Response.} Let $\mathcal{E}$ contain the stockout and expiration events, identified by completed day $t_e$, event type, and product, with $t_e+3\leq T$; events with $t_e+3>T$ are right-censored. Let $r(e)=1$ if an executed order or price change on the same product occurs on a day in $\{t_e+1,t_e+2,t_e+3\}$. Then
 \begin{equation}
 S_4=\frac{\sum_{e\in\mathcal{E}}r(e)}{|\mathcal{E}|}.
 \end{equation}
-Per-model LLM values in Figure~\ref{fig:four_stage_scores} are descriptive means over the three fixed scaffolds (ReAct only for GPT-5.5); per-rollout values, numerators, and denominators are released with the benchmark.
+Per-model LLM values in Figure~\ref{fig:four_stage_scores} are descriptive means over the three fixed scaffolds (ReAct only for GPT-5.5). Table~\ref{tab:four_stage_runs} reports all four scores for every rollout and both references, with the Stage 3 components; full numerators and denominators are released with the benchmark.
 
 \paragraph{Detailed breakdowns.}
 Figure~\ref{fig:failure_diagnostics} reports a separately versioned set of finer diagnostics (diagnostics v2) for one survival-first selected rollout per LLM. They decompose each stage into several descriptive quantities defined in the following paragraphs.

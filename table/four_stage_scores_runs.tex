@@ -1,0 +1,34 @@
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llrrrrrrr}
+\toprule
+Model & Scaffold & Days & $S_1$ & $S_2$ & $S_3^{\mathrm{qty}}$ & $S_3^{\mathrm{sup}}$ & $S_3$ & $S_4$ \\
+\midrule
+OR-Composite & -- & 180 & 100.0 & 100.0 & 92.4 & 53.8 & 73.1 & 49.7 \\
+Privileged Heuristic & -- & 180 & 100.0 & 100.0 & 89.4 & 100.0 & 94.7 & 100.0 \\
+\midrule
+GPT-5.5 & ReAct & 180 & 100.0 & 99.4 & 74.0 & 34.8 & 54.4 & 27.6 \\
+DeepSeek-V4-Pro & ReAct & 144 & 98.0 & 93.5 & 64.1 & 19.1 & 41.6 & 21.9 \\
+DeepSeek-V4-Pro & Reflection & 94 & 99.1 & 90.2 & 36.9 & 23.9 & 30.4 & 45.5 \\
+DeepSeek-V4-Pro & Plan-and-Act & 180 & 95.4 & 96.0 & 70.7 & 23.3 & 47.0 & 35.6 \\
+Kimi-K2.6 & ReAct & 130 & 87.0 & 97.0 & 64.8 & 12.5 & 38.7 & 23.9 \\
+Kimi-K2.6 & Reflection & 66 & 97.9 & 99.4 & 46.4 & 18.3 & 32.3 & 26.6 \\
+Kimi-K2.6 & Plan-and-Act & 89 & 89.3 & 97.8 & 47.8 & 16.8 & 32.3 & 21.4 \\
+Qwen3.5-397B-A17B & ReAct & 50 & 88.4 & 88.5 & 47.5 & 13.1 & 30.3 & 36.0 \\
+Qwen3.5-397B-A17B & Reflection & 71 & 79.9 & 85.0 & 51.1 & 16.9 & 34.0 & 35.9 \\
+Qwen3.5-397B-A17B & Plan-and-Act & 50 & 92.5 & 89.2 & 43.4 & 13.2 & 28.3 & 20.3 \\
+Grok-4.3 & ReAct & 58 & 72.3 & 0.0 & 40.0 & 14.1 & 27.0 & 14.3 \\
+Grok-4.3 & Reflection & 51 & 69.0 & 48.6 & 44.8 & 12.1 & 28.4 & 40.0 \\
+Grok-4.3 & Plan-and-Act & 12 & 40.0 & 1.1 & 30.0 & 23.3 & 26.7 & 16.7 \\
+GLM-5.1 & ReAct & 60 & 21.6 & 61.7 & 15.2 & 31.9 & 23.6 & 6.9 \\
+GLM-5.1 & Reflection & 49 & 14.4 & 13.5 & 30.5 & 12.2 & 21.3 & 42.3 \\
+GLM-5.1 & Plan-and-Act & 56 & 37.7 & 24.5 & 2.0 & 56.0 & 29.0 & 18.8 \\
+MiniMax-M2.5 & ReAct & 61 & 94.7 & 86.4 & 28.4 & 19.7 & 24.0 & 48.0 \\
+MiniMax-M2.5 & Reflection & 56 & 73.3 & 42.2 & 17.3 & 18.6 & 17.9 & 56.4 \\
+MiniMax-M2.5 & Plan-and-Act & 73 & 88.7 & 87.9 & 29.9 & 14.6 & 22.3 & 57.0 \\
+\bottomrule
+\end{tabular}
+\caption{Four-stage diagnostic scores (\%) for every rollout and both references. Days are completed days. $S_1$: prior-day sales query coverage; $S_2$: fully evidenced actions; $S_3^{\mathrm{qty}}$: order lines within the cover window; $S_3^{\mathrm{sup}}$: highest-quality-supplier selection; $S_3$: mean of the two; $S_4$: three-day anomaly response rate. All LLM rollouts use the \texttt{hard\_v2} configuration with environment seed 42; each model is run once under each of its evaluated scaffolds.}
+\label{tab:four_stage_runs}
+\end{table*}

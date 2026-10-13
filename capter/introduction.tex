@@ -8,8 +8,8 @@ Most LLM agents fail to sustain operations over the full
 horizon, and even the best-performing agent substantially
 underperforms both reference policies in final net worth.
 OR-Composite is an operations-research baseline using
-only agent-visible information, whereas Oracle is a
-privileged reference with access to hidden simulator state.}
+only agent-visible information, whereas the Privileged Heuristic
+is a hand-specified rule with access to hidden simulator state.}
 \label{fig:net_worth}
 \vspace{-2mm}
 \end{figure}
@@ -21,10 +21,9 @@ Recent studies reveal substantial limitations in agent reliability in realistic 
 underrepresented in existing long-horizon agent evaluations.
 
 To address the limited coverage of integrated, data-grounded
-retail operations in existing agent benchmarks, we introduce \textbf{RetailBench}, a controlled, data-grounded benchmark for long-horizon retail operations that captures the complexities of real-world business decision-making. Agents autonomously manage pricing, replenishment, supplier selection, information acquisition, and memory under delivery delays, inventory aging, stockouts, customer feedback, returns, and financial constraints.We evaluate seven LLMs in this realistic retail environment. Figure~\ref{fig:net_worth} reveals substantial gaps in long-horizon operational performance, with only two LLM completing the 180-day horizon. The strongest LLM achieves a final net worth of 24,351 and total sales of 136,405 units, substantially below OR-Composite (80,801 and 202,557), an operations-research reference restricted to agent-visible information (Appendix~\ref{appendix:or_composite}), and the privileged Oracle (124,491 and 263,310). 
+retail operations in existing agent benchmarks, we introduce \textbf{RetailBench}, a controlled, data-grounded benchmark for long-horizon retail operations that captures the complexities of real-world business decision-making. Agents autonomously manage pricing, replenishment, supplier selection, information acquisition, and memory under delivery delays, inventory aging, stockouts, customer feedback, returns, and financial constraints.We evaluate seven LLMs in this realistic retail environment. Figure~\ref{fig:net_worth} reveals substantial gaps in long-horizon operational performance, with only two LLM completing the 180-day horizon. The strongest LLM achieves a final net worth of 24,351 and total sales of 136,405 units, substantially below OR-Composite (80,801 and 202,557), an operations-research reference restricted to agent-visible information (Appendix~\ref{appendix:or_composite}), and the Privileged Heuristic (124,491 and 263,310), a hand-specified rule with access to hidden simulator state (Appendix~\ref{appendix:handcrafted_policy}).
 
-To further investigate these performance gaps, we conduct a four-stage analysis of agent trajectories. Our analysis reveals a pronounced disconnect between information acquisition and downstream decision quality: agents demonstrate strong performance in product monitoring and evidence collection, yet struggle to translate acquired evidence into effective decisions and respond promptly to salient operational anomalies amid noisy, high-volume environmental feedback. 
-. Our analysis reveals that agents gather evidence effectively but struggle to make high-quality decisions under complex dependencies and respond promptly to operational anomalies. Despite achieving 99.4\% fully evidenced actions, the best-performing agent attains only a 34.8\% high-quality decision rate and a 27.6\% anomaly response rate.
+To further investigate these performance gaps, we conduct a four-stage analysis of agent trajectories. Our analysis reveals a pronounced disconnect between information acquisition and downstream decision quality: agents demonstrate strong performance in product monitoring and evidence collection, yet struggle to translate acquired evidence into effective decisions and respond promptly to salient operational anomalies amid noisy, high-volume environmental feedback.
 
 Our main contributions are as follows:
 
@@ -33,7 +32,7 @@ Our main contributions are as follows:
     We introduce \textbf{RetailBench}, a controlled, data-grounded environment that captures the complexity of real-world retail operations, where pricing, inventory management, supplier selection, customer feedback, and financial constraints jointly shape long-term outcomes (Section~\ref{sec:env}).
 
     \item \textbf{Systematic evaluation of agents in realistic, long-horizon settings.}
-    We evaluate 19 model--scaffold configurations over a 180-day horizon, revealing substantial limitations in sustained operational performance and large gaps relative to an operations-research reference and a privileged Oracle (Section~\ref{sec:benchmark_results}).
+    We evaluate 19 model--scaffold configurations over a 180-day horizon, revealing substantial limitations in sustained operational performance and large gaps relative to an operations-research reference and the Privileged Heuristic (Section~\ref{sec:benchmark_results}).
 
     \item \textbf{Fine-grained diagnosis of long-horizon agent failures.}
     We analyze agent trajectories across four stages: product monitoring, evidence collection, decision-making, and anomaly response. Our findings reveal two recurring failure patterns in realistic operational settings: \textbf{shallow evidence-to-decision integration} and \textbf{limited responsiveness to salient operational anomalies} (Sections~\ref{sec:four_stage_setup} and~\ref{sec:failure_pattern_analysis}).

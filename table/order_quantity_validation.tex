@@ -1,0 +1,19 @@
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrrr}
+\toprule
+Group & Class & Lines & Stockout & Expiry \\
+\midrule
+LLM agents & Under-ordered & 2082 & 44.7 & 0.9 \\
+ & Reasonable & 2765 & 34.2 & 2.4 \\
+ & Over-ordered & 299 & 32.8 & 9.7 \\
+\midrule
+References & Under-ordered & 130 & 56.2 & 0.8 \\
+ & Reasonable & 2146 & 27.3 & 1.2 \\
+ & Over-ordered & 92 & 4.3 & 7.6 \\
+\bottomrule
+\end{tabular}
+\caption{Order-level check of the Stage 3 quantity classification against subsequent events (\%). Stockout: the product is reported as stocked out on a day within the supplier's quoted maximum lead time after the order. Expiry: units of the product are reported as expired within the shelf-life window after the earliest possible arrival. The classification uses only the action-day state; these rates are realized outcomes and are not inputs to $S_3$.}
+\label{tab:order_quantity_validation}
+\end{table}

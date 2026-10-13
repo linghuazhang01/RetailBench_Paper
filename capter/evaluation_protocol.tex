@@ -15,13 +15,13 @@ Our evaluation covers seven LLMs and 19 model--scaffold configurations: six mode
 \subsection{Reference Policies}
 \label{sec:references}
 
-We compare LLM agents against two non-LLM reference policies that differ in information access: OR-Composite uses only agent-visible information, whereas the Oracle reads privileged simulator state.
+We compare LLM agents against two non-LLM reference policies that differ in information access: OR-Composite uses only agent-visible information, whereas the Privileged Heuristic reads hidden simulator state.
 
 \paragraph{OR-Composite.}
 OR-Composite is a classical operations-research reference restricted to agent-visible information. It combines textbook rules for four decisions: a fixed assortment of at most two SKUs per category ranked by visible historical contribution; quality-first supplier selection~\citep{dickson1966vendor,weber1991vendor} that ranks vendors by an upper confidence bound on observed return rates~\citep{brown2001interval}; daily-review $(s,S)$ replenishment capped by shelf life~\citep{silver2017inventory,nahmias1982perishable}; and weekly constant-elasticity markup pricing over return-adjusted costs~\citep{phillips2021pricing}. It never reads latent supplier quality, hidden demand, news effects, or future outcomes. Appendix~\ref{appendix:or_composite} gives the full specification, parameters, and information-access audit.
 
-\paragraph{Oracle.}
-The Oracle is a privileged, rule-based reference. It reads structured simulator state that agents cannot observe, including supplier quality scores and news impact values: it orders each product from its highest-quality supplier, sets prices that maximize historical profit, and scales replenishment to news-adjusted demand targets. It is neither a fair baseline for LLM agents nor an upper bound, because it follows a fixed hand-specified rule and faces none of the agents' prompt, tool-selection, or memory constraints. Appendix~\ref{appendix:handcrafted_policy} gives its algorithm and parameter settings.
+\paragraph{Privileged Heuristic.}
+The Privileged Heuristic is a hand-specified, rule-based reference with access to hidden simulator state. It reads structured simulator state that agents cannot observe, including supplier quality scores and news impact values: it orders each product from its highest-quality supplier, sets prices that maximize historical profit, and scales replenishment to news-adjusted demand targets. It is neither a fair baseline for LLM agents nor an upper bound, because it follows a fixed hand-specified rule and faces none of the agents' prompt, tool-selection, or memory constraints. Appendix~\ref{appendix:handcrafted_policy} gives its algorithm and parameter settings.
 
 % Table 2 is defined here so that it floats to the top of page 6.
 \input{table/aggregate_main_results}
@@ -61,7 +61,7 @@ Outcome metrics quantify long-horizon operational performance but provide limite
     Measures evidence completeness as the fraction of executed orders and price updates for which all required evidence dimensions were observed within their category-specific validity windows.
 
     \item \textbf{Stage 3: Decision-Making.}
-    Measures supplier-quality alignment as the fraction of order lines placed with the highest-quality supplier among the five candidates. As agents observe only noisy quality signals, this evaluator-side metric assesses supplier quality selection rather than overall decision optimality, which may also depend on price–quality trade-offs.
+    Measures decision quality as the mean of two shares computed from the state on the action day. The order-quantity share is the fraction of order lines whose post-arrival days of cover, defined as inventory position plus ordered units divided by expected daily demand at the agent's current price, lie between the chosen supplier's quoted maximum lead time and the product's shelf life. The supplier-quality share is the fraction of order lines placed with the highest-quality supplier among the five candidates. Both use evaluator-side simulator state; they assess order sizing and sourcing rather than overall decision optimality, which also depends on pricing.
     
     \item \textbf{Stage 4: Anomaly Response.}
     Measures operational response coverage as the fraction of stockout and expiration events followed by an executed order or price adjustment for the affected product within three days. Events whose three-day windows extend beyond the last completed day are right-censored and excluded.
