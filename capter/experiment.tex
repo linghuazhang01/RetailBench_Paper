@@ -58,38 +58,13 @@ substantial variation remains across models.
 \begin{figure}[t]
     \centering
     \includegraphics[width=\columnwidth]{figures/order_quantity_classification.pdf}
-    \caption{Order-quantity classification. Each bar partitions a model's executed order lines into under-ordered (cover below the quoted maximum lead time), reasonable, and over-ordered (cover above shelf life); LLM results are averaged across evaluated scaffolds, and $^{\dagger}$GPT-5.5 is evaluated under ReAct only. Numbers at right are median days of cover.}
+    \caption{Order-quantity classification. LLM agents frequently under-order, while Qwen3.5 and Grok-4.3 also exhibit substantial over-ordering. Each bar partitions executed order lines into under-ordered (cover below the quoted maximum lead time), reasonable, and over-ordered (cover above shelf life). LLM results are averaged across evaluated scaffolds; $^{\dagger}$GPT-5.5 is evaluated under ReAct only. Numbers on the right indicate median days of cover.
+    }
     \label{fig:order_quantity}
 \end{figure}
 
 \paragraph{Decision-making: shallow evidence-to-decision integration.}
-Despite relatively strong evidence collection,
-Figure~\ref{fig:four_stage_scores} reveals a pronounced
-decline in decision-making scores.
-The gap is largest in order sizing (Figure~\ref{fig:order_quantity}).
-Across 5{,}146 LLM order lines with a valid demand reference,
-only 53.7\% have a post-arrival cover between the quoted
-maximum lead time and the product's shelf life,
-compared with 92.4\% for OR-Composite and 89.4\% for the Privileged Heuristic.
-Model-level means range from 15.9\% (GLM-5.1) to 74.0\% (GPT-5.5).
-The dominant error is under-ordering (40.5\% of LLM order lines):
-agents typically order 50 to 200 units for products whose
-expected daily demand is 40 to 70 units, covering two to four days
-while delivery takes three to seven.
-Qwen3.5 and Grok-4.3 are the exceptions, with 18.5\% and 23.7\%
-over-ordered lines whose quantities exceed what can sell before expiration.
-Supplier selection shows the same disconnect:
-across 5{,}172 order lines, LLM agents select the
-highest-quality supplier in only 21.6\% of cases,
-close to the 20\% random-choice baseline, with model-level means
-from 14.4\% to 34.8\% against 53.8\% for OR-Composite.
-Both quantities are evaluator-side probes computed from the
-action-day state and do not measure pricing or overall optimality.
-Nevertheless, considered alongside their weaker business outcomes,
-these findings indicate
-\textbf{shallow evidence-to-decision integration}:
-agents query demand and supplier information but do not convert it
-into quantities and sources that match it.
+Despite relatively strong evidence collection, LLM agents show substantial weaknesses in order sizing and supplier selection (Figure~\ref{fig:four_stage_scores}). Among 5{,}146 LLM order lines with a valid demand reference, only 53.7\% have days of cover within the prescribed window between the supplier's maximum quoted lead time and the product's shelf life, compared with 92.4\% for OR-Composite and 89.4\% for the Privileged Heuristic (Figure~\ref{fig:order_quantity}). Model-level means range from 15.9\% for GLM-5.1 to 74.0\% for GPT-5.5. Under-ordering is the dominant deviation, accounting for 40.5\% of valid LLM order lines. Over-ordering is also substantial for Qwen3.5 and Grok-4.3, with model-level mean rates of 18.5\% and 23.7\%, respectively. Supplier-quality alignment is similarly limited: across 5{,}172 order lines, LLM agents choose the highest-quality supplier in only 21.6\% of cases, close to the 20\% rate under uniform random selection. Model-level means range from 14.4\% to 34.8\%, compared with 53.8\% for OR-Composite. These evaluator-side probes use action-day state to assess order sizing and sourcing; they do not evaluate pricing or establish overall economic optimality. Together with the weaker business outcomes, these results suggest \textbf{shallow evidence-to-decision integration}: extensive querying is not consistently accompanied by ordering decisions aligned with the demand and supplier-quality references.
 
 \paragraph{Anomaly response: inconsistent operational follow-up.}
 Figure~\ref{fig:four_stage_scores} further shows limited
