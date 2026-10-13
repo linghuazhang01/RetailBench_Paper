@@ -3,24 +3,24 @@
 \footnotesize
 \setlength{\tabcolsep}{3pt}
 \resizebox{\textwidth}{!}{%
-\begin{tabular}{lllll}
+\begin{tabular}{llll}
 \toprule
-Policy input & Used by & Agent tool & Calls in the reported run & Hidden access? \\
+Policy input & Used by & Agent tool & Hidden access? \\
 \midrule
-Date and funds & Cash allocation & view\_funds\_and\_date & Daily & No \\
-Inventory and pending orders & Inventory position & view\_inventory & Daily & No \\
-Inventory capacity & Order allocation & end\_today feedback message & After it is reported & No \\
-Sales and price history & Assortment, demand, price range & view\_sales\_profit\_history & Day 1 only & No \\
-Current product prices & Pricing & view\_sku\_prices & Weekly & No \\
-Supplier quotes and lead time & Sourcing, replenishment & view\_current\_date\_supplier\_prices & Daily & No \\
-Supplier price history & Assortment contribution & view\_supplier\_price\_history & Day 1 only & No \\
-Vendor sold and returned counts & Sourcing, pricing & view\_supplier\_returns\_avg\_rate & Weekly, per supplier & No \\
-Shelf capacity & Assortment & view\_shelf\_status / set\_shelf\_skus & Day 1 only & No \\
-Own daily sales and stockouts & Demand, elasticity & end\_today result & Daily & No \\
-Raw supplier quality & Forbidden & No agent tool & -- & Not used \\
-Latent demand & Forbidden & No agent tool & -- & Not used \\
-Hidden news impact & Forbidden & No agent tool & -- & Not used \\
-Future outcomes & Forbidden & No agent tool & -- & Not used \\
+Date and funds & Cash allocation & view\_funds\_and\_date & No \\
+Inventory and pending orders & Inventory position & view\_inventory & No \\
+Inventory capacity & Order allocation & end\_today feedback message & No \\
+Sales and price history & Assortment, demand, price range & view\_sales\_profit\_history & No \\
+Current product prices & Pricing & view\_sku\_prices & No \\
+Supplier quotes and lead time & Sourcing, replenishment & view\_current\_date\_supplier\_prices & No \\
+Supplier price history & Assortment contribution & view\_supplier\_price\_history & No \\
+Vendor sold and returned counts & Sourcing, pricing & view\_supplier\_returns\_avg\_rate & No \\
+Shelf capacity & Assortment & view\_shelf\_status / set\_shelf\_skus & No \\
+Own daily sales and stockouts & Demand, elasticity & end\_today result & No \\
+Raw supplier quality & Forbidden & No agent tool & Not used \\
+Latent demand & Forbidden & No agent tool & Not used \\
+Hidden news impact & Forbidden & No agent tool & Not used \\
+Future outcomes & Forbidden & No agent tool & Not used \\
 \bottomrule
 \end{tabular}
 }
