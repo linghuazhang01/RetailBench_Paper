@@ -1,0 +1,27 @@
+% Table 1: comparison with related agent benchmarks (input from introduction.tex so it floats to page 2).
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2pt}
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}l cc cccc cccc@{}}
+\toprule
+& \multicolumn{2}{c}{Setting} & \multicolumn{4}{c}{Agent decisions} & \multicolumn{4}{c}{Environment dynamics} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-7}\cmidrule(l){8-11}
+Benchmark & Real data & Long-horizon & Pricing & Restock & Supplier & Shelf & Expiry & Reviews & Events & Cash \\
+\midrule
+WebShop~\citep{3webshopscalablerealworldweb} & \cmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \pmark & \xmark & \xmark \\
+ShoppingBench~\citep{wang2025shoppingbench} & \cmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+TheAgentCompany~\citep{xu2024theagentcompany} & \cmark & \pmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+UltraHorizon~\citep{utltabench} & \xmark & \cmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+AIM-Bench~\citep{aimbenchevaluatingdecisionmakingbiases} & \xmark & \pmark & \xmark & \cmark & \pmark & \xmark & \pmark & \xmark & \xmark & \xmark \\
+YC-Bench~\citep{he2026ycbench} & \xmark & \cmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark \\
+Vending-Bench~\citep{backlund2025vendingbenchbenchmarklongtermcoherence} & \pmark & \cmark & \cmark & \cmark & \cmark & \cmark & \xmark & \xmark & \pmark & \cmark \\
+Vending-Bench 2~\citep{andonlabs2025vendingbench2} & \xmark & \cmark & \cmark & \cmark & \cmark & \cmark & \xmark & \pmark & \pmark & \cmark \\
+\midrule
+\textbf{RetailBench (ours)} & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+\bottomrule
+\end{tabular*}
+\caption{Comparison with related agent benchmarks. Setting: \textbf{Real data} (built on real-world data) and \textbf{Long-horizon} (earlier decisions shape later states over an extended run). Agent decisions: \textbf{Pricing} (set prices), \textbf{Restock} (place replenishment orders), \textbf{Supplier} (choose among suppliers), and \textbf{Shelf} (allocate shelf or slot space). Environment dynamics: \textbf{Expiry} (products expire), \textbf{Reviews} (customer reviews and returns), \textbf{Events} (external demand shocks), and \textbf{Cash} (a cash balance with recurring costs). \cmark{} modeled; \pmark{} partial; \xmark{} absent.}
+\label{tab:benchmark_axes}
+\vspace{-3mm}
+\end{table*}

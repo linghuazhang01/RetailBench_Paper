@@ -1,0 +1,151 @@
+
+
+\subsection{Interface}
+
+RetailBench models single-store supermarket operations as a partially
+observable decision process over 180 simulated days. Agents manage
+pricing, replenishment, and supplier selection through tool-based
+interactions, as illustrated in Figure~\ref{fig:retailbench_framework}.
+These decisions are interdependent and have delayed consequences:
+pricing and replenishment affect future sales and inventory, while
+delivery delays, product expiration, and market changes influence
+subsequent operations and financial outcomes.
+
+Formally, we model RetailBench as a partially observable Markov
+decision process (POMDP):
+\begin{equation}
+\label{eq:pomdp}
+\mathcal{M} = (\mathcal{S}, \mathcal{A}, \mathcal{O}, T, \Omega, R),
+\end{equation}
+where $\mathcal{S}$ is the state space, $\mathcal{A}$ the tool-action
+space, $\mathcal{O}$ the observation space, $T$ the transition function,
+$\Omega$ the observation function, and $R$ the business-outcome
+function. Agents observe the environment only through available tools,
+without access to its full underlying state. Appendix~\ref{app:state_action_spaces}
+provides the detailed state and action spaces.
+
+At day $t$ and intra-day step $k$, the environment state is
+factorized as:
+\begin{equation}
+\label{eq:latent_state}
+S_{t,k} = (P, I, V, C, D, E, F)_{t,k},
+\end{equation}
+where $P$ denotes product attributes and prices, $I$ inventory and
+pending orders, $V$ shelf assortment, $C$ supplier conditions,
+$D$ demand factors, $E$ external events, and $F$ financial state.
+These components jointly characterize retail operations under
+inventory, shelf-capacity, and financial constraints.
+
+Agents interact with RetailBench through three categories of tools:
+read-only tools for information acquisition,
+auxiliary tools for memory and computation, and
+operational tools for business decisions.
+At day $t$ and interaction step $k$, let $S_{t,k}$ denote the
+environment state, $h_{t,k}$ the agent's interaction history,
+and $a_{t,k}$ the selected tool action.
+The interaction is formalized as
+\begin{equation}
+\label{eq:agent_interaction}
+\begin{aligned}
+\mathcal{A} &=
+\mathcal{A}^{\mathrm{read}}
+\cup \mathcal{A}^{\mathrm{other}}
+\cup \mathcal{A}^{\mathrm{act}},\\
+o_{t,k} &= \Omega(S_{t,k},a_{t,k}),
+\, a_{t,k}\in\mathcal{A}^{\mathrm{read}},\\
+z_{t,k} &= G(h_{t,k},a_{t,k}),
+\, a_{t,k}\in\mathcal{A}^{\mathrm{other}},\\
+S_{t,k+1} &= T(S_{t,k},a_{t,k}),
+\, a_{t,k}\in
+\mathcal{A}^{\mathrm{act}}\!\setminus\!\{a^{\mathrm{end}}\}.
+\end{aligned}
+\end{equation}
+
+Here, $\Omega$ is the observation function that returns
+environment information $o_{t,k}$, while $G$ represents
+auxiliary operations producing outputs $z_{t,k}$ from
+the agent's interaction history.
+The transition function $T$ updates the environment state
+following operational actions, whereas read-only and
+auxiliary tools leave the simulator state unchanged.
+Specifically, read-only tools expose inventory, sales,
+supplier quotes, and customer feedback without revealing
+latent demand or supplier-quality parameters.
+Auxiliary tools support memory and computation, while
+operational tools enable pricing, replenishment,
+shelf management, and persistent note updates.
+
+Time advances only when the agent invokes \texttt{end\_today},
+which triggers the daily settlement:
+\begin{equation}
+\label{eq:end_today_transition}
+S_{t+1,0}
+= T(S_{t,k},a^{\mathrm{end}})
+\equiv T_{\mathrm{day}}(S_{t,k}).
+\end{equation}
+This transition processes deliveries, sales, customer feedback,
+returns, product expiration, operating costs, and market changes.
+Consequently, current decisions shape future inventory, cash flow,
+and operational opportunities, requiring agents to balance
+short-term performance with long-term profitability and survival.
+
+\subsection{Data-Grounded Simulator}
+
+RetailBench integrates real-world retail data with controlled simulation
+mechanisms to model long-horizon business operations. Its data sources
+provide empirical foundations for retail demand, pricing, customer
+feedback, and external events.
+
+We use the Dominick's dataset~\citep{DominicksDataset}, which contains
+store-level records of product categories, sales, prices, and
+cost-related information. These records inform the product catalog
+and empirical priors for demand, store traffic, pricing, and
+procurement costs. We select 96 products across 20 categories
+with sufficient records to estimate product-level demand and
+category-level substitution patterns.
+
+Customer feedback is grounded in Amazon Reviews
+2023~\citep{hou2024bridging}, which provides category-specific review
+pools organized by ratings, sentiment, and product aspects.
+Realized sales generate reviews whose ratings depend on supplier
+quality, with comments sampled from the corresponding generated reviews pool.
+External events are constructed from financial news
+articles~\citep{ashraq2025financialNewsArticles}, covering neutral,
+category-level, and product-level events.
+Agents observe news and historical feedback, while latent event
+parameters govern their effects on demand and supply.
+
+Together, these sources provide data-grounded operational signals
+within a controlled, partially observable simulation environment.
+
+
+\subsection{Modules}
+\label{sec:module_logic}
+
+RetailBench comprises seven interconnected modules: Inventory,
+Suppliers \& Orders, Shelf, Customer Demand, Reviews \& Returns,
+News Events, and Finance \& Records
+(Appendix~\ref{app:simulator_modules}).
+Together, these modules govern inventory availability, supplier
+conditions, demand realization, customer feedback, external events,
+and financial outcomes.
+
+Module interactions introduce dependencies across operational decisions
+and time. Replenishment affects future inventory through delivery
+delays, while pricing and shelf allocation influence realized sales.
+Inventory aging, returns, and operating costs further affect
+subsequent inventory availability and financial conditions.
+Consequently, operational decisions have delayed effects that
+shape future states and constrain subsequent actions.
+
+Detailed module definitions and day-level update equations are
+provided in Appendix~\ref{app:simulator_modules}
+and Appendix~\ref{app:simulator_update_equations}.
+
+
+\subsection{Scope}
+
+RetailBench focuses on integrated, single-store retail operations
+rather than isolated operational subproblems
+(Section~\ref{sec:related_work}; Table~\ref{tab:benchmark_axes}).
+By integrating data-grounded business conditions, interdependent decisions, and delayed consequences, RetailBench provides a controlled yet realistic retail environment for evaluating long-horizon agent decision-making under partial observability.

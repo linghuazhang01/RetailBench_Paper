@@ -1,0 +1,270 @@
+\section{Simulator}
+\label{appendix:simulator}
+
+\subsection{Simulator Modules}
+\label{app:simulator_modules}
+
+RetailBench follows a seven-module organization: Inventory, Suppliers \& Orders, Shelf, Customer Demand, Reviews \& Returns, News Events, and Finance \& Records. Static product attributes, including identity, category, shelf life, retail price, historical sales summaries, and review summaries, are shared across these modules. The modules are coupled through the daily transition process: orders create delayed deliveries, shelf-assortment decisions determine customer-facing availability, demand is realized as sales, reviews and returns update feedback signals, news changes demand or supply conditions, and finance records cash-flow outcomes and store viability.
+
+\paragraph{Inventory.}
+The inventory module tracks physical stock state, including on-hand units, item age, sellable quantity, capacity constraints, stockouts, expirations, and waiting items that cannot yet enter inventory because of capacity limits. It determines the feasibility constraints for procurement, shelving, and sales.
+
+\paragraph{Shelf.}
+The shelf module enforces a finite shelf capacity and determines the customer-facing assortment. Stocked products that are not on the shelf remain in inventory but are not visible to customers and therefore cannot generate demand.
+
+\paragraph{Suppliers \& Orders.}
+The suppliers-and-orders module provides five procurement candidates per product, each with cost, quality, and delivery-time profiles. Supplier choices affect procurement expenditure, delivery timing, return risk, reviews, and future inventory availability. Replenishment orders are converted into delayed deliveries that enter inventory on later days when capacity allows.
+
+\paragraph{Customer Demand.}
+Following RetailSynth~\citep{xia2023retailsynth}, customer choice follows an MNL model~\citep{mcfadden_conditional_1974}. Daily traffic comes from Dominick's~\citep{DominicksDataset}. The simulator first samples category demand from power-aggregated shelf-visible attraction~\citep{nakanishi1974mci}, then allocates it across visible products. The corresponding update equations are given in Appendix~\ref{app:simulator_update_equations}.
+
+\paragraph{Reviews \& Returns.}
+The reviews-and-returns module converts realized sales and supplier quality into post-sale feedback. Sold items can generate product-level reviews, which update rating summaries and later demand through $\rho^{\mathrm{rev}}_{jt}$. Returned units are sampled from supplier-quality-dependent return probabilities, logged at the product and supplier level, and deducted from realized revenue. Thus, supplier quality affects both customer feedback and return pressure.
+
+\paragraph{News Events.}
+The news-events module samples observable news text with hidden simulator metadata specifying impact scope, target category or product, direction, strength, affected side, and duration. Demand-side news changes product attraction through $\rho^{\mathrm{news}}_{jt}$, while supply-side news changes supplier costs through $\delta^{\mathrm{sup}}_{jt}$.
+
+\paragraph{Finance \& Records.}
+The finance-and-records module tracks revenue, procurement cost, returns, rent, cash, inventory value, pending-order value, net worth, and persistent sales, supplier, review, return, and news records. At each day transition, the simulator applies deliveries, shelf-constrained demand realization, sales, feedback updates, expiration, rent, cash-flow updates, and next-day supplier/news changes.
+
+\subsection{State and Action Spaces}
+\label{app:state_action_spaces}
+
+We construct the environment using real-world retail data from the Dominick’s dataset \citep{DominicksDataset}. From the 20 available product categories, we select 96 products with the most complete and informative sales records. The richness of these observations enables reliable modeling of the relationship between pricing decisions and realized demand. The same source provides the cost priors and the historical sales records used to calibrate the demand model.
+
+\paragraph{Key Symbols.}
+Let $\mathcal{J}$ denote the set of selected products, with cardinality $|\mathcal{J}| = J$ (where $J=96$ in our experiments). Each product $j \in \mathcal{J}$ belongs to a product category $\mathrm{cat}(j) \in \{1,\ldots,20\}$. For each product $j$, let $\mathcal{K}(j)$ denote its associated supplier set, with $|\mathcal{K}(j)| = 5$. Let $V_t\subseteq\mathcal{J}$ denote the product set placed on shelf on day $t$.
+
+\paragraph{State and action spaces.}
+The simulator state space is $\mathcal{S}=\mathcal{S}^{\mathrm{prod}}\times\mathcal{S}^{\mathrm{inv}}\times\mathcal{S}^{\mathrm{shelf}}\times\mathcal{S}^{\mathrm{sup}}\times\mathcal{S}^{\mathrm{dem}}\times\mathcal{S}^{\mathrm{ext}}\times\mathcal{S}^{\mathrm{fin}}$, covering product attributes and prices, inventory and pending deliveries, shelf assortment, supplier candidates, demand signals, external news, and financial accounting. The action space is $\mathcal{A}=\mathcal{A}^{\mathrm{read}}\cup\mathcal{A}^{\mathrm{other}}\cup\mathcal{A}^{\mathrm{act}}$, which contains read-only observation tools, constrained analysis tools, and state-changing tools; Appendix~\ref{app:action_space_details} lists every tool.
+
+\subsubsection{Product State \texorpdfstring{$S_t^{\text{prod}}$}{S t prod}}
+
+For each product $j$, we maintain a set of static attributes together with time-varying operational signals:
+\begin{equation}
+S_{t,j}^{\text{prod}} =
+\big(
+\texttt{id}_j,\ \texttt{desc}_j,\ L_j,\ p_{jt},\ \mathbf{h}^{\text{sales}}_{j,t},\ \mathbf{r}_{j,t}
+\big).
+\end{equation}
+Here, $\texttt{id}_j$ and $\texttt{desc}_j$ denote the unique identifier and textual description of product $j$, respectively. $L_j$ denotes the shelf life (in days), and $p_{jt}$ is the retail price on day $t$. The term $\mathbf{h}^{\text{sales}}_{j,t}$ encodes historical sales statistics, while $\mathbf{r}_{j,t}$ summarizes aggregated customer review signals, such as average rating and review volume.
+
+\subsubsection{Inventory and Shelf State \texorpdfstring{$S_t^{\text{inv}}$, $S_t^{\text{shelf}}$}{S t inv, S t shelf}}
+
+Inventory is represented at the product level with age tracking. Let $I_{jt}$ denote the on-hand units of product $j$ at the beginning of day $t$. To support shelf-life constraints and depreciation, we track the arrival time and remaining shelf life of each unit.
+
+\paragraph{Capacity constraint and pending queue.}
+Let $\mathrm{Cap}$ denote the total inventory capacity of the store. If incoming replenishment orders would violate this constraint, excess units are placed into a first-in-first-out (FIFO) pending queue $\mathcal{Q}_t$ and become available only after sufficient inventory space is released:
+\begin{equation}
+\sum_{j\in\mathcal{J}} \sum_{a=0}^{L_j} I_{jt}^{(a)} \le \mathrm{Cap}.
+\end{equation}
+
+\paragraph{Stockout signal.}
+When realized demand exceeds the available sellable inventory of product $j$ on day $t$, a stockout indicator is triggered. This signal is recorded at the end of day $t$ and exposed to the agent as explicit operational feedback.
+
+\paragraph{Expiration and destruction.}
+At each day transition, inventory units whose residence time exceeds their shelf life are removed from the system.
+
+\paragraph{Shelf assortment.}
+The active shelf assortment $V_t$ has finite product capacity:
+\begin{equation}
+V_t \subseteq \mathcal{J}, \qquad |V_t| \le C^{\mathrm{shelf}}.
+\end{equation}
+Only products in $V_t$ are visible to customer demand; newly delivered inventory remains off shelf until the agent updates $V_t$ through the shelf-assortment action.
+
+\subsubsection{Supply Chain State \texorpdfstring{$S_t^{\text{sup}}$}{S t sup}}
+
+Each product $j$ is associated with a set of suppliers $k \in \mathcal{K}(j)$. The supplier state includes procurement price $c_{jk}$, quality level $q_{jk}$, and delivery-time distribution:
+\begin{equation}
+S_{t,j}^{\text{sup}} =
+\big\{(c_{jk}, q_{jk}, \mathcal{L}_{jk}) : k \in \mathcal{K}(j)\big\}.
+\end{equation}
+Delivery time $\ell_{jk} \sim \mathcal{L}_{jk}$ is sampled when an order is placed. Procurement prices are discretized into tiers using Dominick’s cost signals \citep{DominicksDataset}; mapping higher price tiers to higher quality levels is a modeling assumption, motivated by the positive price--quality correlations reported for national brands and non-food private labels \citep{supplychain}.
+
+\paragraph{Enforced diversity.}
+To avoid degenerate supplier configurations, we enforce that each product has (i) one supplier with maximal quality, (ii) one supplier with minimal price and minimal quality, and remaining suppliers spanning intermediate price–quality levels.
+
+\subsubsection{Demand Signals \texorpdfstring{$S_t^{\text{dem}}$}{S t dem}}
+\label{app:demand}
+
+Demand-related components capture customer traffic, shelf-visible choice sets, and stochastic sales generation. We define
+\begin{equation}
+S_t^{\text{dem}} =
+\big(
+N_t,\ \{A^0_{jt},\rho^{\mathrm{rev}}_{jt},\rho^{\mathrm{news}}_{jt}\}_{j\in\mathcal{J}}
+\big),
+\end{equation}
+where $N_t$ denotes daily customer traffic derived from the Dominick’s dataset, $A^0_{jt}$ is the calibrated base attraction, and $\rho^{\mathrm{rev}}_{jt}$ and $\rho^{\mathrm{news}}_{jt}$ are bounded demand-side effects from reviews and news. Given traffic $N_t$, prices $\{p_{jt}\}_{j\in\mathcal{J}}$, shelf assortment $V_t$, review signals, and active news, realized sales follow Equations~\ref{eq:base_attraction}--\ref{eq:demand_sales}; a product $j\notin V_t$ receives no demand on that day.
+
+\subsubsection{External Information \texorpdfstring{$S_t^{\text{ext}}$}{S t ext}}
+
+We maintain a set of active news events $\mathcal{E}_t$. Each event $e \in \mathcal{E}_t$ is stored as
+\begin{equation}
+e=(m,\tau,\texttt{side},\texttt{sign},s,\texttt{text},\texttt{ttl}),
+\label{eq:news_record}
+\end{equation}
+where $m \in \{\text{neutral}, \text{macro}, \text{category}, \text{product}\}$ is the event mode (impact scope), $\tau$ is the targeted category or product, \texttt{side} $\in \{\text{demand}, \text{supply}, \text{both}\}$ is the affected side, \texttt{sign} $\in \{+1,-1\}$ is the impact direction, $s$ is the impact strength, \texttt{text} is the observable news content, and \texttt{ttl} is the number of days the event remains active. Neutral news has $s = 0$ by design. News texts are grounded in financial-news-articles~\citep{ashraq2025financialNewsArticles} and expanded into retail-relevant events through LLM-assisted rewriting and metadata annotation. Depending on \texttt{side} and $m$, an event changes demand attraction, supplier prices, or both (Appendix~\ref{app:simulator_update_equations}).
+
+\subsubsection{Simulator Update Equations}
+\label{app:simulator_update_equations}
+
+This section gives the detailed equations summarized in Section~\ref{sec:module_logic}.
+
+\paragraph{Supply price update.}
+Let $\bar c_{jkt}$ be the base procurement price for supplier $k$ and product $j$ on day $t$, and let $\delta^{\mathrm{sup}}_{jt}$ be the active supply-side news effect matched to product $j$, its category, or the macro scope. The daily procurement price exposed to the agent is
+\begin{equation}
+c_{jkt}=\bar c_{jkt}\bigl(1-\delta^{\mathrm{sup}}_{jt}\bigr).
+\label{eq:supply_price}
+\end{equation}
+Positive supply news lowers procurement cost, while negative supply news raises it.
+
+\paragraph{Attraction and sales.}
+The base product attraction combines historical preference, seasonality, price sensitivity, and stochastic demand noise:
+\begin{equation}
+\begin{aligned}
+A^{0}_{jt}
+&=\exp\bigl(\alpha_j+\tilde\beta_{jt}\,p_{jt}+\epsilon_{jt}\bigr),\\
+\tilde\beta_{jt}
+&=\beta_j+\beta^s_j\sin(2\pi w_t/52)+\beta^c_j\cos(2\pi w_t/52).
+\end{aligned}
+\label{eq:base_attraction}
+\end{equation}
+Reviews and news multiplicatively adjust this attraction:
+\begin{equation}
+A_{jt}=A^{0}_{jt}\bigl(1+\rho^{\mathrm{rev}}_{jt}+\rho^{\mathrm{news}}_{jt}\bigr).
+\label{eq:adjusted_attraction}
+\end{equation}
+Let $V_{ct}=\{j\in V_t:\mathrm{cat}(j)=c\}$ be the shelf-visible product set in category $c$. Given daily traffic $N_t$, RetailBench samples category-level purchase volume and allocates it by relative attraction among shelf-visible products:
+\begin{equation}
+\begin{aligned}
+G_{ct}
+&=\left(\sum_{j\in V_{ct}} A_{jt}^{\rho}\right)^{1/\rho},\\
+\tilde Y_{ct}
+&\sim \mathrm{Binomial}\!\left(N_t,\frac{G_{ct}}{1+G_{ct}}\right),\\
+\pi_{jt|c}
+&=\frac{A_{jt}}{\sum_{i\in V_{ct}}A_{it}},\; j\in V_{ct},\\
+\hat{\mathbf{y}}_{ct}
+&\sim \mathrm{Multinomial}\!\left(\tilde Y_{ct},\boldsymbol{\pi}_{ct}\right),\\
+y_{jt}
+&=\min\!\left(\hat y_{jt}, I_{jt}^{\mathrm{sellable}}\right).
+\end{aligned}
+\label{eq:demand_sales}
+\end{equation}
+
+\paragraph{Review effect.}
+Review text is grounded in Amazon Reviews 2023~\citep{hou2024bridging}. During simulation, sold units can generate reviews; the rating is sampled from supplier quality and the text is sampled from the matching category--rating--dimension pool. The demand effect is computed from the difference between recent and initial rating:
+\begin{equation}
+\rho^{\mathrm{rev}}_{jt}
+=g_{\mathrm{cat}(j)}(\bar r_{jt})-g_{\mathrm{cat}(j)}(r^{0}_{j}),
+\label{eq:review_effect}
+\end{equation}
+where $g_{\mathrm{cat}(j)}(\cdot)$ is a category-specific smooth rating-gain function, $\bar r_{jt}$ is the recent average rating, and $r^{0}_{j}$ is the initial rating.
+
+\paragraph{News effect.}
+For events stored as in Equation~\ref{eq:news_record}, demand-side news contributes
+\begin{equation}
+\rho^{\mathrm{news}}_{jt}
+=\lambda\sum_{e\in\mathcal{E}_t:\,e\sim j}
+w_{m(e)}\,\mathrm{sgn}(e)\,s_e,
+\label{eq:news_effect}
+\end{equation}
+where $e\sim j$ indicates that the event matches the product, its category, or the macro scope; $w_{m(e)}$ is the mode weight; and $\lambda$ is the global impact scale. Supply-side events analogously define $\delta^{\mathrm{sup}}_{jt}$ in Equation~\ref{eq:supply_price}.
+
+\subsubsection{Financial State \texorpdfstring{$S_t^{\text{fin}}$}{S t fin}}
+
+Let $F_t$ denote available funds at the start of day $t$. Procurement cost is deducted from funds when an order is placed, and the order is carried at that cost until delivery, so placing an order leaves net worth unchanged. Net worth is computed as
+\begin{equation}
+\mathrm{NW}_t = F_t + \sum_{m\in\mathcal{I}_t} c_m \max\!\left(0,\ 1-\frac{a_{mt}}{L_m}\right) + \sum_{o\in\mathcal{O}_t} C_o,
+\end{equation}
+where $\mathcal{I}_t$ contains every delivered unit, including units queued for admission when inventory capacity is full; $c_m$ is the unit's realized purchase price, $a_{mt}$ its age since delivery, and $L_m$ its shelf life, so expired units are valued at zero; $\mathcal{O}_t$ is the set of pending orders, and $C_o$ is the total procurement cost of order $o$.
+
+\subsubsection{Action Space Details}
+\label{app:action_space_details}
+
+RetailBench exposes actions through typed tools. Read-only tools instantiate $\Omega$ and do not modify simulator state; other tools provide constrained analysis over observations; state-changing tools instantiate $T$.
+
+\paragraph{Read-only tools.}
+\begin{itemize}[leftmargin=*,nosep]
+    \item \texttt{view\_funds\_and\_date}: returns current funds, date, and rent context.
+    \item \texttt{view\_inventory}: reports on-hand units, waiting-capacity items, incoming quantities, and open supplier orders.
+    \item \texttt{view\_shelf\_status}: reports active shelf assortment, shelf capacity, and on-shelf product summaries.
+    \item \texttt{view\_sku\_prices}: returns current selling prices for selected products.
+    \item \texttt{view\_sku\_inventory\_cost}: summarizes average procurement cost and inventory age.
+    \item \texttt{view\_sales\_profit\_history}: returns historical sales, average selling price, and realized profit.
+    \item \texttt{view\_current\_date\_supplier\_prices}: returns current supplier quotes.
+    \item \texttt{view\_supplier\_price\_history}: returns historical supplier prices for a product.
+    \item \texttt{view\_notes}: returns the agent's stored cross-day notes.
+\end{itemize}
+
+\paragraph{Conditional observation tools.}
+\begin{itemize}[leftmargin=*,nosep]
+    \item \texttt{view\_sku\_avg\_ratings}: exposes product-level average ratings when review feedback is enabled.
+    \item \texttt{view\_supplier\_returns\_avg\_rate}: exposes supplier-level return rates, optionally restricted to selected products.
+    \item \texttt{view\_today\_news}: lists current news IDs and titles when news is enabled.
+    \item \texttt{view\_news\_detail}: returns the observable content of a selected news item.
+    \item \texttt{view\_news\_history}: returns news records over a date range.
+\end{itemize}
+
+\paragraph{Other/analysis tools.}
+\begin{itemize}[leftmargin=*,nosep]
+    \item \texttt{execute\_code}: runs constrained Python for read-only analysis over observations. It can compute summaries, rank products, and compare suppliers, but mutation tools are unavailable inside the sandbox.
+\end{itemize}
+
+\paragraph{State-changing tools.}
+\begin{itemize}[leftmargin=*,nosep]
+    \item \texttt{place\_order}: places a multi-product order through a selected supplier, deducts procurement cost, samples delivery time, and schedules future inventory arrivals.
+    \item \texttt{modify\_sku\_price}: updates the retail price $p_{jt}$ of product $j$.
+    \item \texttt{set\_shelf\_skus}: replaces the active shelf assortment subject to $|V'|\le C^{\mathrm{shelf}}$.
+    \item \texttt{add\_note} and \texttt{remove\_note}: update cross-day notes.
+    \item \texttt{end\_today}: applies $T_{\mathrm{day}}$ over deliveries, shelf-visible demand, sales, reviews, returns, expiration, rent, cash-flow updates, and next-day supplier/news changes.
+\end{itemize}
+
+\subsection{Environment Setting}
+\label{appendix:env_setting}
+
+RetailBench provides a single released environment configuration, \texttt{hard\_v2}, for all reported evaluations. Table~\ref{tab:env_setting} lists its parameters.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.50\columnwidth}>{\raggedright\arraybackslash}p{0.44\columnwidth}@{}}
+\toprule
+Parameter & Value \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Time range}} \\
+Data begin / end time & 06/06/91 / 12/31/95 \\
+Store begin time & 09/07/91 \\
+Store ID & 15 \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Finance and capacity}} \\
+Initial funds & 30,000 \\
+Daily rent & 600 \\
+Inventory capacity & 15,000 units \\
+Shelf capacity & 40 products \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Features}} \\
+Reviews, news, shelf constraint & all enabled \\
+Review ratio & 0.05 \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{News}} \\
+Impact base scale / absolute cap & 0.8 / 0.5 \\
+News items per day & 20 \\
+Sample ratio (neutral / category / macro / product) & 0.90 / 0.02 / 0.03 / 0.05 \\
+Mode weight (neutral / category / macro / product) & 0.0 / 1.0 / 1.0 / 1.2 \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Demand}} \\
+Category offsets & 0 for all categories \\
+Category aggregation & power mean, $\rho=3$ (Eq.~\ref{eq:demand_sales}) \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Seeds}} \\
+Environment seed & 42 \\
+News seed & 42 \\
+\bottomrule
+\end{tabular}
+\caption{The \texttt{hard\_v2} configuration used for all reported runs. The 20 categories are Bathroom Tissues, Beer, Bottled Juices, Canned Soup, Canned Tuna, Cereals, Cheeses, Cigarettes, Cookies, Crackers, Dish Detergent, Fabric Softeners, Front-end Candies, Frozen Entrees, Frozen Juices, Oatmeal, Paper Towels, Snack Crackers, Soft Drinks, and Toothpastes.}
+\label{tab:env_setting}
+\end{table}
+
+\FloatBarrier

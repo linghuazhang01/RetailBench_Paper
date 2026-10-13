@@ -1,0 +1,5 @@
+RetailBench is designed as a controlled, data-grounded benchmark for evaluating long-horizon decision-making rather than a comprehensive simulation of retail operations. Its current implementation focuses on single-store operations, combining real-world retail data with simulated dynamics to capture interdependent decisions and delayed consequences. Extending the environment to multi-store and multi-agent settings could further broaden its applicability.
+
+Our evaluation covers seven LLMs across 19 prompting-based model--scaffold configurations under a fixed environment setting. As each configuration contains a single rollout, the reported across-scaffold statistics characterize variation across scaffolds rather than seed-level uncertainty. Furthermore, the four-stage trajectory analysis provides descriptive insights into agent behavior without establishing causal relationships between individual decision patterns and operational outcomes.
+
+Future work could explore more diverse environment configurations, repeated evaluations, and advanced stateful or learning-based agents to further investigate long-horizon robustness and adaptation.

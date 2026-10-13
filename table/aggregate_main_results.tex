@@ -1,0 +1,38 @@
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.0pt}
+\renewcommand{\arraystretch}{1.08}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrrrr}
+\toprule
+Entry & Days $\uparrow$ & Net worth $\uparrow$ & Sales $\uparrow$ & Return $\downarrow$ & Expired $\downarrow$ & Stockout-day rate $\downarrow$ & Tokens per Day $\downarrow$ \\
+\midrule
+DeepSeek-V4-Pro & \secondval{139.3 $\pm$ 43.2} & 2,258.10 $\pm$ 6,810.42 & \secondval{110,980 $\pm$ 68,622} & \secondval{0.094 $\pm$ 0.007} & 0.039 $\pm$ 0.022 & 0.659 $\pm$ 0.111 & 450,693 $\pm$ 62,795 \\
+GLM-5.1 & 55.0 $\pm$ 5.6 & -113.13 $\pm$ 4,113.31 & 4,842 $\pm$ 3,555 & \secondval{0.094 $\pm$ 0.053} & 0.013 $\pm$ 0.015 & \bestval{0.300 $\pm$ 0.148} & 1,016,126 $\pm$ 157,931 \\
+Grok-4.3 & 40.3 $\pm$ 24.8 & \secondval{8,201.74 $\pm$ 12,806.30} & 10,861 $\pm$ 10,275 & 0.095 $\pm$ 0.038 & 0.077 $\pm$ 0.088 & \secondval{0.395 $\pm$ 0.036} & \secondval{259,191 $\pm$ 171,982} \\
+Kimi-K2.6 & 95.0 $\pm$ 32.4 & 1,566.00 $\pm$ 4,005.87 & 55,317 $\pm$ 28,258 & 0.109 $\pm$ 0.016 & 0.014 $\pm$ 0.023 & 0.533 $\pm$ 0.103 & 684,782 $\pm$ 295,717 \\
+MiniMax-M2.5 & 63.3 $\pm$ 8.7 & 602.42 $\pm$ 1,104.83 & 20,908 $\pm$ 3,587 & 0.105 $\pm$ 0.002 & \bestval{0.005 $\pm$ 0.003} & 0.731 $\pm$ 0.081 & 802,006 $\pm$ 419,031 \\
+Qwen3.5-397B-A17B & 57.0 $\pm$ 12.1 & 3,709.77 $\pm$ 2,473.06 & 32,857 $\pm$ 2,774 & 0.106 $\pm$ 0.010 & 0.069 $\pm$ 0.036 & 0.645 $\pm$ 0.057 & 886,581 $\pm$ 179,962 \\
+GPT-5.5 & \bestval{180.0 $\pm$ --} & \bestval{24,350.98 $\pm$ --} & \bestval{136,405 $\pm$ --} & \bestval{0.065 $\pm$ --} & \secondval{0.011 $\pm$ --} & 0.761 $\pm$ -- & \bestval{176,260 $\pm$ --} \\
+\midrule
+OR-Composite (classical OR) & 180.0 & 80,801.21 & 202,557 & 0.047 & 0.013 & 0.417 & \\
+\midrule
+Oracle Policy & 180.0 & 124,491.15 & 263,310 & 0.020 & 0.024 & 0.678 & \\
+\bottomrule
+\end{tabular}
+}
+\caption{Model-level outcome summary.
+Results are reported as mean $\pm$ sample standard deviation
+across three scaffolds, except GPT-5.5 (ReAct only).
+LLM agents substantially underperform both references,
+with the best LLM achieving only 30.1\% of OR-Composite's
+final net worth.
+Bold and underline indicate the best and second-best LLM results.
+OR-Composite uses only agent-visible information
+(Appendix~\ref{appendix:or_composite}),
+while Oracle is a privileged reference
+(Appendix~\ref{appendix:oracle}).}
+\label{tab:aggregate_main_results}
+\vspace{-3mm}
+\end{table*}

@@ -1,0 +1,36 @@
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\renewcommand{\arraystretch}{1.06}
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{llrrrrrr}
+\toprule
+Model & Scaffold & Days $\uparrow$ & Net worth $\uparrow$ & Sales $\uparrow$ & Return $\downarrow$ & Expired $\downarrow$ & Stockout days $\downarrow$ \\
+\midrule
+\textbf{DeepSeek-V4-Pro} & \textbf{Plan-and-Act} & \textbf{180} & \textbf{10,120.90} & \textbf{164,417} & \textbf{0.0858} & \textbf{0.0144} & \textbf{116} \\
+DeepSeek-V4-Pro & ReAct & 144 & -1,554.47 & 134,931 & 0.0968 & 0.0573 & 80 \\
+DeepSeek-V4-Pro & Reflection & 94 & -1,792.13 & 33,593 & 0.0980 & 0.0452 & 73 \\
+GLM-5.1 & Plan-and-Act & 56 & -2,824.78 & 739 & 0.0338 & 0.0000 & 11 \\
+\textbf{GLM-5.1} & \textbf{ReAct} & \textbf{60} & \textbf{-2,134.36} & \textbf{7,016} & \textbf{0.1347} & \textbf{0.0297} & \textbf{14} \\
+GLM-5.1 & Reflection & 49 & 4,619.76 & 6,770 & 0.1145 & 0.0086 & 23 \\
+\textbf{GPT-5.5} & \textbf{ReAct} & \textbf{180} & \textbf{24,350.98} & \textbf{136,405} & \textbf{0.0646} & \textbf{0.0113} & \textbf{137} \\
+Grok-4.3 & Plan-and-Act & 12 & 22,989.16 & 372 & 0.0538 & 0.0000 & 5 \\
+\textbf{Grok-4.3} & \textbf{ReAct} & \textbf{58} & \textbf{828.40} & \textbf{11,305} & \textbf{0.1028} & \textbf{0.0577} & \textbf{24} \\
+Grok-4.3 & Reflection & 51 & 787.67 & 20,907 & 0.1286 & 0.1735 & 18 \\
+Kimi-K2.6 & Plan-and-Act & 89 & -1,996.52 & 48,955 & 0.0911 & 0.0016 & 58 \\
+\textbf{Kimi-K2.6} & \textbf{ReAct} & \textbf{130} & \textbf{792.19} & \textbf{86,214} & \textbf{0.1226} & \textbf{0.0411} & \textbf{62} \\
+Kimi-K2.6 & Reflection & 66 & 5,902.33 & 30,783 & 0.1121 & 0.0002 & 31 \\
+\textbf{MiniMax-M2.5} & \textbf{Plan-and-Act} & \textbf{73} & \textbf{-397.95} & \textbf{23,521} & \textbf{0.1077} & \textbf{0.0049} & \textbf{52} \\
+MiniMax-M2.5 & ReAct & 61 & 1,788.24 & 22,384 & 0.1041 & 0.0028 & 50 \\
+MiniMax-M2.5 & Reflection & 56 & 416.97 & 16,819 & 0.1041 & 0.0085 & 37 \\
+Qwen3.5-397B-A17B & Plan-and-Act & 50 & 3,820.59 & 30,074 & 0.1170 & 0.1055 & 29 \\
+Qwen3.5-397B-A17B & ReAct & 50 & 6,125.56 & 32,874 & 0.0968 & 0.0345 & 34 \\
+\textbf{Qwen3.5-397B-A17B} & \textbf{Reflection} & \textbf{71} & \textbf{1,183.17} & \textbf{35,622} & \textbf{0.1047} & \textbf{0.0655} & \textbf{48} \\
+\bottomrule
+\end{tabular}
+}
+\caption{Complete outcome matrix for all 19 available LLM rollouts. Each row is one model--scaffold cell with a single rollout. \textbf{Bold} rows mark each model's longest-surviving rollout (ties broken by final net worth, then sales), analyzed in Figure~\ref{fig:failure_diagnostics}.}
+\label{tab:all_run_model_statistics}
+\vspace{-2mm}
+\end{table*}

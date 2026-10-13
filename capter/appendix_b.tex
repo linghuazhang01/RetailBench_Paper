@@ -1,0 +1,80 @@
+\section{Reference Policies}
+\label{appendix:reference_policies}
+
+Both references run on \texttt{hard\_v2} with environment seed 42 and environment version 1.1.0, which seeds all simulator randomness; each variant is run once. As for the LLM rollouts, a rollout stops after five consecutive \texttt{end\_today} closes with negative funds. Both references complete all 180 days.
+
+\subsection{OR-Composite}
+\label{appendix:or_composite}
+
+\input{table/or_composite_access_audit}
+\begin{algorithm}[t]
+\small
+\caption{Oracle quality-based policy}
+\label{alg:handcrafted_policy}
+\begin{algorithmic}[1]
+\Require Horizon $T$, categories $\mathcal{C}$, products $\mathcal{J}$, shelf capacity $C^{\mathrm{shelf}}$, per-category product count $n_{\mathrm{cat}}$, bulk multiplier $B$.
+\State Select $\mathcal{U}\leftarrow\emptyset$.
+\For{each category $c\in\mathcal{C}$}
+    \State Rank products in $c$ by historical total profit before the store start date.
+    \State Add the top $n_{\mathrm{cat}}$ products to $\mathcal{U}$.
+\EndFor
+\State Set shelf assortment $V_0$ to a category-diverse subset of $\mathcal{U}$ with $|V_0|\le C^{\mathrm{shelf}}$.
+\For{day $t=1,\ldots,T$}
+    \If{funds are negative for 5 consecutive days}
+        \State Terminate the rollout.
+    \EndIf
+    \State Observe funds, news, inventory, shelf status, recent sales, and supplier quotes.
+    \For{each product $j\in\mathcal{U}$}
+        \State $I_j \leftarrow$ on-hand units plus waiting-capacity units for product $j$.
+        \State Choose supplier $k^\star=\arg\max_k(q_{jk},-c_{jkt})$.
+        \State Estimate price $p^\star_j$ by maximizing mean 30-day historical profit:
+        \Statex \hspace{\algorithmicindent} $p^\star_j=\arg\max_p \operatorname{mean}\{(p-c_{jk^\star t})\,y_{j\tau}:p_{j\tau}=p\}$.
+        \State Let $\hat d_j$ be the mean historical sales at $p^\star_j$; use $\hat d_j=10$ if no record is available.
+        \State Compute news multiplier $m_j=\operatorname{clip}((1+\eta^{\mathrm{need}}_j)(1+\eta^{\mathrm{sup}}_j),0.5,2.0)$.
+        \State Set target demand $\tilde d_j \leftarrow m_j\hat d_j$.
+        \If{$p^\star_j$ exists}
+            \State Call \texttt{modify\_sku\_price}$(j,p^\star_j)$.
+        \EndIf
+        \State Let $Q_j$ be the pending order quantity for product $j$.
+        \State Let $R_j\leftarrow B\tilde d_j$ and $O_j\leftarrow \max(1,\lfloor B\tilde d_j\rfloor)$.
+        \If{$I_j\le R_j$ and $Q_j<O_j$}
+            \State $a_j\leftarrow \min(O_j-Q_j,\ \text{available inventory capacity}-100)$.
+            \If{$a_j>0$}
+                \State Call \texttt{place\_order} for $a_j$ units of product $j$ from supplier $k^\star$.
+            \EndIf
+        \EndIf
+    \EndFor
+    \State Call \texttt{end\_today}.
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+OR-Composite combines textbook rules for sourcing, replenishment, cash allocation, and pricing (Section~\ref{sec:references}). The policy object receives only allowlisted agent-visible fields, never the environment object; Table~\ref{tab:or_composite_access_audit} maps each input to its agent tool.
+
+
+\paragraph{Specification.}
+Before day 1, the policy keeps at most two SKUs per category with the largest visible historical contribution over the preceding 60 days (historical price minus the cheapest historical quote, times units sold), capped at shelf capacity; this retains 38 SKUs. Each SKU's price range is its minimum and maximum historically observed selling price. Weekly, it reads each vendor's sold count $n$ and return count $k$ per SKU over the previous 60 days and rates the pair by $\bar r=\mathrm{Beta}^{-1}(0.95;\,k+\tfrac12,\,n-k+\tfrac12)$, the one-sided Jeffreys upper bound~\citep{brown2001interval}. A pair without visible sales receives $\bar r\approx0.994$, so it is chosen only when no vendor of that SKU has a record; if none has, the policy falls back to empirical-Bayes means shrunk toward the supplier and global rates with 50 pseudo-units. Pre-period records mainly cover the vendors the store used before the episode, so cheap vendors often have no visible record; averaging them toward the supplier mean would treat them as typical instead of untested. Demand $(\mu,\sigma)$ comes from the latest 30 non-stockout sales observations, each rescaled to the current price by $u\,(p/p_{\mathrm{obs}})^{-\varepsilon}$. The elasticity $\varepsilon$ is the negative log--log OLS slope of units on price over the store's own non-stockout days with positive sales (at least three points), shrunk toward the category's pooled slope with weight $n/(n+30)$; the markup applies only when $\varepsilon>1.1$, and otherwise the price is set to the top of its range. Daily orders are ranked by unit margin $p(1-\bar r)-c$ times shortage share $(S-IP)/S$ and funded until cash net of one day of rent runs out; SKUs with nonpositive unit margin are not ordered, and inventory capacity is respected once the end-of-day message reports it.
+
+\paragraph{Replenishment and pricing.}
+Replenishment follows a daily-review $(s,S)$ policy~\citep{silver2017inventory}. From the demand estimates $(\mu,\sigma)$ above, the policy sets
+\begin{equation}
+\begin{aligned}
+s &= \left\lceil \mu H + z\sigma\sqrt{H} \right\rceil,\\
+H &= L+1+b,\\
+S &= \min\left(
+\left\lceil s+\mu T \right\rceil,
+\left\lceil \mu\ell \right\rceil
+\right),
+\end{aligned}
+\end{equation}
+and orders $S-IP$ whenever $IP\leq\min(s,S)$. Here, $L$ denotes the quoted lead-time midpoint, $\ell$ the visible shelf life, $IP$ the inventory position, $z=1.28$ the safety factor, $b=2$ buffer days, and $T=6$ the replenishment cycle; the shelf-life cap limits excess perishable inventory~\citep{nahmias1982perishable}. Weekly pricing applies a constant-elasticity markup over the return-adjusted procurement cost,
+\begin{equation}
+p = \frac{c}{1-\bar r}
+\cdot \frac{\varepsilon}{\varepsilon-1},
+\end{equation}
+where $c$ denotes the selected supplier's quote, $\bar r$ its upper-bound return rate, and $\varepsilon$ the estimated demand elasticity~\citep{phillips2021pricing}. Prices are constrained to each SKU's historically observed range.
+
+\subsection{Oracle Policy}
+\label{appendix:handcrafted_policy}
+
+The oracle policy is a deterministic, quality-based store-operation rule used as a privileged non-agent reference. It is neither a fair LLM-agent baseline nor a strict upper bound: it has direct access to structured simulator fields such as supplier quality scores and news impact values, and it does not face prompt length, tool-selection, memory, or action-formatting constraints. The reported run uses the released environment with $n_{\mathrm{cat}}=2$ products per category, shelf capacity $C^{\mathrm{shelf}}=40$, and replenishment multiplier $B=6$, selected by a parameter sweep over the shelf-constrained setting. Differences between this policy and OR-Composite cannot be attributed solely to hidden information because their assortment, replenishment, and pricing rules also differ.

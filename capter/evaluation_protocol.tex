@@ -1,0 +1,71 @@
+\subsection{Environment Configuration}
+
+All evaluations use a fixed RetailBench configuration designed to capture the complexity of sustained retail operations. The environment comprises 96 products across 20 categories, with five candidate suppliers per product whose price--quality profiles evolve over time. Customer reviews and daily news events introduce additional operational feedback. Agents operate with an initial budget of 30{,}000, daily rent of 600, an inventory capacity of 15{,}000 units, and a shelf capacity of 40 products. Each rollout spans up to 180 days and terminates upon bankruptcy,
+defined as five consecutive days of negative funds. Complete environment settings are provided in Appendix~\ref{appendix:env_setting}.
+
+
+\subsection{Models and Scaffolds}
+\label{sec:models_frameworks}
+
+We evaluate LLM agents using three prompting-based scaffolds: ReAct~\citep{yao2023react}, Reflection~\citep{reflection}, and Plan-and-Act~\citep{erdogan2025planandactimprovingplanningagents}. These scaffolds represent common agent interaction patterns and operate through the same RetailBench tool interface; Appendix~\ref{appendix:prompts} lists their prompts.
+
+Our evaluation covers seven LLMs and 19 model--scaffold configurations: six models under all three scaffolds and GPT-5.5 under ReAct only. For models with complete scaffold coverage, we report means and sample standard deviations across scaffolds, reflecting scaffold sensitivity rather than seed-level uncertainty. 
+
+
+\subsection{Reference Policies}
+\label{sec:references}
+
+We compare LLM agents against two non-LLM reference policies that differ in information access: OR-Composite uses only agent-visible information, whereas the Oracle reads privileged simulator state.
+
+\paragraph{OR-Composite.}
+OR-Composite is a classical operations-research reference restricted to agent-visible information. It combines textbook rules for four decisions: a fixed assortment of at most two SKUs per category ranked by visible historical contribution; quality-first supplier selection~\citep{dickson1966vendor,weber1991vendor} that ranks vendors by an upper confidence bound on observed return rates~\citep{brown2001interval}; daily-review $(s,S)$ replenishment capped by shelf life~\citep{silver2017inventory,nahmias1982perishable}; and weekly constant-elasticity markup pricing over return-adjusted costs~\citep{phillips2021pricing}. It never reads latent supplier quality, hidden demand, news effects, or future outcomes. Appendix~\ref{appendix:or_composite} gives the full specification, parameters, and information-access audit.
+
+\paragraph{Oracle.}
+The Oracle is a privileged, rule-based reference. It reads structured simulator state that agents cannot observe, including supplier quality scores and news impact values: it orders each product from its highest-quality supplier, sets prices that maximize historical profit, and scales replenishment to news-adjusted demand targets. It is neither a fair baseline for LLM agents nor an upper bound, because it follows a fixed hand-specified rule and faces none of the agents' prompt, tool-selection, or memory constraints. Appendix~\ref{appendix:handcrafted_policy} gives its algorithm and parameter settings.
+
+% Table 2 is defined here so that it floats to the top of page 6.
+\input{table/aggregate_main_results}
+
+\subsection{Outcome and Resource Metrics}
+
+We evaluate long-horizon operational performance through three categories of business outcomes and two categories of resource diagnostics. Arrows indicate the preferred direction for outcome metrics.
+
+\begin{itemize}[leftmargin=*]
+
+    \item \textbf{Operational viability.}
+    \textbf{Final Net Worth} ($\uparrow$) measures terminal asset value, including cash, on-hand inventory, and pending-order value. \textbf{Survival Days} ($\uparrow$) measures the duration of continued store operation.
+
+    \item \textbf{Sales effectiveness.}
+    \textbf{Final Total Sales} ($\uparrow$) measures cumulative units sold; and \textbf{Return Ratio} ($\downarrow$) measures the fraction of sold units that are returned.
+
+    \item \textbf{Inventory control.}
+    \textbf{Stockout Days} ($\downarrow$) counts days on which at least one product has insufficient inventory, while \textbf{Expired Ratio} ($\downarrow$) measures the fraction of expired units among all units sold or expired.
+
+    \item \textbf{Token use.}
+    \textbf{Tokens per Day} measures average token consumption as a resource-efficiency diagnostic.
+
+\end{itemize}
+
+
+\subsection{Four-Stage Diagnosis}
+\label{sec:four_stage_setup}
+
+Outcome metrics quantify long-horizon operational performance but provide limited insight into where agent decision-making breaks down. To investigate these limitations, we introduce a four-stage trajectory analysis covering product monitoring, evidence collection, decision-making, and anomaly response. Each stage is evaluated using an auditable, trace-based metric that captures a distinct aspect of operational behavior.
+
+\begin{itemize}[leftmargin=*]
+
+    \item \textbf{Stage 1: Product Monitoring.}
+    Measures product-level inspection coverage as the fraction of products sold on day $t-1$ that receive a successful product-specific query on day $t$. Store-wide listings are excluded.
+
+    \item \textbf{Stage 2: Evidence Collection.}
+    Measures evidence completeness as the fraction of executed orders and price updates for which all required evidence dimensions were observed within their category-specific validity windows.
+
+    \item \textbf{Stage 3: Decision-Making.}
+    Measures supplier-quality alignment as the fraction of order lines placed with the highest-quality supplier among the five candidates. As agents observe only noisy quality signals, this evaluator-side metric assesses supplier quality selection rather than overall decision optimality, which may also depend on price–quality trade-offs.
+    
+    \item \textbf{Stage 4: Anomaly Response.}
+    Measures operational response coverage as the fraction of stockout and expiration events followed by an executed order or price adjustment for the affected product within three days. Events whose three-day windows extend beyond the last completed day are right-censored and excluded.
+
+\end{itemize}
+
+The four metrics are evaluated independently and Appendix~\ref{appendix:stage_metrics} provides the complete metric definitions, denominators, censoring rules, and finer per-stage analyses.
